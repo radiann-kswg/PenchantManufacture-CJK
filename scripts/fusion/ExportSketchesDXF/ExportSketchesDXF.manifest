@@ -1,0 +1,11 @@
+{
+    "autodeskProduct": "Fusion360",
+    "type": "script",
+    "author": "RadianN_kswg",
+    "description": {
+        "": "アクティブなデザインの全スケッチを DXF 書き出しする"
+    },
+    "scriptLanguage": "Python",
+    "supportedOS": "windows|mac",
+    "editEnabled": true
+}
