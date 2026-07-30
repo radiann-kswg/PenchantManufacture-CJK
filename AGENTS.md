@@ -53,14 +53,21 @@ PenchantManufacture-CJK/
 **Fusion 360 ネイティブデータのスケッチ** を起点とする:
 
 ```
-Fusion 360 (.f3d, 例: Dice (NKO) v1.f3d)
+Fusion 360 (.f3d, 例: assets/fusion/Dice (NKO) v1.f3d)
   │
-  ├─ [DXF 書き出し] scripts/fusion/export_sketches_dxf.py（Fusion 360 内で実行）
-  │         └─ assets/sketches/dxf/char_uniXXXX_XXXX.dxf
+  ├─ [DXF 書き出し] scripts/extract_dice_dxf.py（Fusion 不要・f3d 内 ASM バイナリを直接パース）
+  │         ├─ assets/sketches/dxf/char_uniXXXX_XXXX.dxf（6字、mm単位、閉LWPOLYLINE）
+  │         └─ assets/sketches/dxf/preview.png（検証用）
   │
   └─ [SVG 化] DXF → アウトラインパス SVG（viewBox 0 0 512 512、本家仕様に準拠）
             └─ src/glyphs/char_uniXXXX_XXXX.svg
 ```
+
+- `scripts/fusion/`（Fusion 360 内で実行する DXF 書き出しスクリプト）は
+  Fusion が使える環境向けの代替経路として温存する。
+- サイコロ6面のグリフは「う お こ ち ま ん」。面ID・鏡像・回転の同定は
+  `scripts/extract_dice_dxf.py` の `FACE_MAP` が SSOT（彫り込み底面の重複
+  ループ＝1109「お」・922「ま」は除外済み）。
 
 ### 命名規則（本家準拠＋CJK 拡張）
 
