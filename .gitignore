@@ -1,0 +1,35 @@
+# original fonts
+_original-fonts/
+
+# zip files for importing
+*.zip
+_exported-dist/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+*.egg
+dist/__pycache__/
+
+# Build artifacts (keep dist/ PNGs but ignore temp files)
+*.tmp
+*.log
+build/
+.build_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Font cache
+*.fea.cache
