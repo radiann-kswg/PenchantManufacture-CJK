@@ -1,12 +1,24 @@
-Creative Commons Attribution 4.0 International (CC BY 4.0)
+PenchantManufacture-CJK — License
 
 Copyright (c) 2026 RadianN_kswg / ラジアン（柏木主税）
 
-This work is licensed under the Creative Commons Attribution 4.0 International License.
+本リポジトリの成果物は、由来によって次の 2 区分のライセンスが適用される。
+CC BY 4.0 は無償再頒布を許諾するライセンスであり有料頒布と両立しないため、
+CJK 拡張部分には CC BY 4.0 を適用しない。
+
+------------------------------------------------------------------------
+Part 1: 本家由来の部分 — CC BY 4.0
+------------------------------------------------------------------------
+対象: `.EN-original/` サブモジュール、および本家 PenchantManufacture
+フォント（半角系グリフ）に由来するアセット・スクリプト。
+
+This part is licensed under the Creative Commons Attribution 4.0
+International License (CC BY 4.0).
 
 You are free to:
   Share — copy and redistribute the material in any medium or format
-  Adapt — remix, transform, and build upon the material for any purpose, even commercially.
+  Adapt — remix, transform, and build upon the material for any purpose,
+  even commercially.
 
 Under the following terms:
   Attribution — You must give appropriate credit to:
@@ -15,7 +27,22 @@ Under the following terms:
   You may do so in any reasonable manner, but not in any way that suggests
   the licensor endorses you or your use.
 
-No additional restrictions — You may not apply legal terms or technological
-measures that legally restrict others from doing anything the license permits.
-
 Full license text: https://creativecommons.org/licenses/by/4.0/legalcode
+
+------------------------------------------------------------------------
+Part 2: CJK 拡張部分 — All Rights Reserved（有料ライセンス頒布予定）
+------------------------------------------------------------------------
+対象: かな・和文約物・和文括弧ほか本リポジトリで新規制作する CJK グリフ、
+および「等幅・全角文字対応」フォント／その派生アセット
+（`assets/sketches/` `src/glyphs/` の CJK 由来物を含む）。
+
+- 無断での複製・再頒布・改変頒布を許諾しない（All Rights Reserved）。
+- 公開時は 1 部 500 円以上の有料ライセンスとして頒布する予定であり、
+  具体的な許諾条件（使用範囲・再頒布可否・埋め込み可否）は頒布開始時に
+  EULA として確定する。
+- 本リポジトリが private である間も本区分は有効であり、閲覧権限は
+  利用許諾を意味しない。
+
+------------------------------------------------------------------------
+いずれの区分でも、著作者クレジット
+（RadianN_kswg / ラジアン（柏木主税））の表記義務は維持される。
