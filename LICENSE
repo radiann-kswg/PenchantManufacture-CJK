@@ -2,18 +2,27 @@ PenchantManufacture-CJK — License
 
 Copyright (c) 2026 RadianN_kswg / ラジアン（柏木主税）
 
-本リポジトリの成果物は、由来によって次の 2 区分のライセンスが適用される。
-CC BY 4.0 は無償再頒布を許諾するライセンスであり有料頒布と両立しないため、
-CJK 拡張部分には CC BY 4.0 を適用しない。
+本リポジトリの成果物は、由来を問わず一律で
+Creative Commons Attribution 4.0 International (CC BY 4.0) を適用する。
+
+  対象: `.EN-original/` サブモジュールおよび本家 PenchantManufacture フォント
+  （半角系グリフ）に由来するアセット・スクリプト、ならびに本リポジトリで
+  新規制作するかな・和文約物・和文括弧ほかの CJK グリフ、「等幅・全角文字対応」
+  フォントおよびその派生アセット（`assets/sketches/` `src/glyphs/` を含む）。
+
+方針変更（2026-09-08）:
+  旧版は 2 区分ライセンス（本家由来 = CC BY 4.0 / CJK 拡張 = All Rights Reserved・
+  1 部 500 円以上の有料頒布予定）であったが、等幅・全角版の想定用途が
+  ターミナルアプリ等への**ソフトウェア埋め込み**であることを踏まえ、
+  本家（PenchantManufacture_ImageAssets）と同一の CC BY 4.0 に統一した。
+  有料頒布計画は撤回する。
 
 ------------------------------------------------------------------------
-Part 1: 本家由来の部分 — CC BY 4.0
+Creative Commons Attribution 4.0 International (CC BY 4.0)
 ------------------------------------------------------------------------
-対象: `.EN-original/` サブモジュール、および本家 PenchantManufacture
-フォント（半角系グリフ）に由来するアセット・スクリプト。
 
-This part is licensed under the Creative Commons Attribution 4.0
-International License (CC BY 4.0).
+This work is licensed under the Creative Commons Attribution 4.0
+International License.
 
 You are free to:
   Share — copy and redistribute the material in any medium or format
@@ -27,22 +36,16 @@ Under the following terms:
   You may do so in any reasonable manner, but not in any way that suggests
   the licensor endorses you or your use.
 
+No additional restrictions — You may not apply legal terms or technological
+measures that legally restrict others from doing anything the license permits.
+
 Full license text: https://creativecommons.org/licenses/by/4.0/legalcode
 
 ------------------------------------------------------------------------
-Part 2: CJK 拡張部分 — All Rights Reserved（有料ライセンス頒布予定）
+埋め込み・再頒布について
 ------------------------------------------------------------------------
-対象: かな・和文約物・和文括弧ほか本リポジトリで新規制作する CJK グリフ、
-および「等幅・全角文字対応」フォント／その派生アセット
-（`assets/sketches/` `src/glyphs/` の CJK 由来物を含む）。
-
-- 無断での複製・再頒布・改変頒布を許諾しない（All Rights Reserved）。
-- 公開時は 1 部 500 円以上の有料ライセンスとして頒布する予定であり、
-  具体的な許諾条件（使用範囲・再頒布可否・埋め込み可否）は頒布開始時に
-  EULA として確定する。
-- 本リポジトリが private である間も本区分は有効であり、閲覧権限は
-  利用許諾を意味しない。
-
-------------------------------------------------------------------------
-いずれの区分でも、著作者クレジット
-（RadianN_kswg / ラジアン（柏木主税））の表記義務は維持される。
+- フォントをアプリケーション・ドキュメント・Web ページへ埋め込むことを許諾する。
+- 埋め込み先の成果物に CC BY 4.0 が伝播することはない（CC BY はコピーレフトではない）。
+- 埋め込み時も著作者クレジット
+  （RadianN_kswg / ラジアン（柏木主税））とライセンスへのリンクの表記義務は維持される。
+  アプリケーションの「ライセンス」「クレジット」画面等、合理的な方法で表示すること。
