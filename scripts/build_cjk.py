@@ -7,6 +7,7 @@
     2. cjk     ``extract_ai_glyphs`` で .ai アートボードを SVG 化（同じ枠契約）
     3. decal   本家 ``generate_decal`` の render を CJK グリフだけに適用（5 スキーム）
     4. weekday 曜日漢字 7 字を曜日配色（docs/WEEKDAY_COLORING_PLAN.md）でデカール化
+    5. previews README 用プレビュー（docs/previews/hero.png, glyphset.png）
 
 使い方（Windows は ``py -3.14``。libcairo が無ければ ``$env:CAIRO_DLL_DIR`` で DLL の場所を渡す）:
     py -3.14 scripts/build_cjk.py
@@ -109,9 +110,9 @@ def decal(sources: list[Path], schemes: dict[str, gd.Scheme]) -> int:
 
 
 def build(font_path: Path, ai_path: Path, with_decal: bool) -> None:
-    print("== 1/4 latin: OTF → 等幅 SVG")
+    print("== 1/5 latin: OTF → 等幅 SVG")
     latin = monospace_latin(font_path, SRC)
-    print("\n== 2/4 cjk: .ai → 等幅 SVG")
+    print("\n== 2/5 cjk: .ai → 等幅 SVG")
     cjk = ai.extract_all(ai_path, SRC)
     keep = {p.stem for p in latin + cjk}
     for stale in SRC.glob("char_*.svg"):
@@ -122,9 +123,9 @@ def build(font_path: Path, ai_path: Path, with_decal: bool) -> None:
     if not with_decal:
         return
 
-    print("\n== 3/4 decal: CJK グリフ × 5 スキーム")
+    print("\n== 3/5 decal: CJK グリフ × 5 スキーム")
     n = decal(cjk, gd.SCHEMES)
-    print("\n== 4/4 weekday: 曜日配色")
+    print("\n== 4/5 weekday: 曜日配色")
     by_char = {chr(int(p.stem[8:12], 16)): p for p in cjk}   # char_uniXXXX_XXXX
     for char, (fill, edge) in WEEKDAY.items():
         if char not in by_char:
@@ -133,6 +134,9 @@ def build(font_path: Path, ai_path: Path, with_decal: bool) -> None:
         scheme = gd.Scheme(f"曜日 {char}", "mono", _rgb(fill), _rgb(fill), _rgb(edge), _rgb(edge),
                            _rgb(edge), grain=0.0)
         n += decal([by_char[char]], {"weekday": scheme})
+    print("\n== 5/5 previews: README 用プレビュー")
+    import build_previews_cjk  # noqa: E402  dist が揃ってから import
+    build_previews_cjk.build()
     print(f"\n完了: 欧文 {len(latin)} 字 / CJK {len(cjk)} 字 / decal {n} 点")
 
 
