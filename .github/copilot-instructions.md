@@ -19,4 +19,7 @@ PenchantManufacture フォント収録グリフ／図柄アセットの **CJK �
 
 - Python 補完規則は本家（`.EN-original/.github/copilot-instructions.md`）に準拠
 - `.EN-original/` `_original-fonts/` 配下への書き込みを提案しないこと
+- `src/glyphs/` `dist/` `docs/previews/` は `scripts/build_cjk.py` の生成物。直接編集を提案しないこと
 - CJK グリフのファイル名は `char_uniXXXX_XXXX` ステム（AGENTS.md 参照）
+- CJK グリフの正は Illustrator 原本（`.ai`）。配置は `scripts/extract_ai_glyphs.py` の `GRID` が SSOT
+- 等幅枠は半角 496u / 全角 992u、縦帯は本家 win 帯 [−198, 793]（AGENTS.md「等幅メトリクス契約」）

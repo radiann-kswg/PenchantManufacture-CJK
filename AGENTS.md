@@ -53,6 +53,7 @@ PenchantManufacture-CJK リポジトリ固有指示の **唯一の正（SSOT）*
 
 ```
 PenchantManufacture-CJK/
+├── README.md                ← 公開向け概要（プレビュー画像・収録グリフ・ビルド手順）
 ├── AGENTS.md                ← 本ファイル（CJK 固有差分の SSOT）
 ├── CLAUDE.md                ← Claude Code 互換入口（@AGENTS.md のみ）
 ├── .github/
@@ -67,12 +68,15 @@ PenchantManufacture-CJK/
 │   ├── glyphs_decal/{sumi,rust,hazard,patina,nickel,weekday}/  ← CJK デカール PNG（幅可変）
 │   └── glyphs_decal_square/{同上}/                               ← 同・正方形（Discord）
 ├── docs/
+│   ├── previews/                 ← hero.png / glyphset.png（build_cjk.py が自動生成。dist 更新時に同じコミットへ）
+│   ├── HANDOFF_PHASE2.md         ← フェーズ2（等幅 OTF）引継ぎ資料：現状・確定契約・手順案・未決事項
 │   ├── GLYPH_EXTENSION_PLAN.md   ← 和文括弧・約物の制作計画（本家 B8 から移管）
 │   ├── WEEKDAY_COLORING_PLAN.md  ← 曜日漢字の配色（decal `weekday` バリアントの正）
 │   └── glyph_aliases.json        ← 本家 extract が生成（自動生成・手編集禁止）
 ├── scripts/
-│   ├── build_cjk.py            ← 一括ビルド（latin → cjk → decal → weekday）
+│   ├── build_cjk.py            ← 一括ビルド（latin → cjk → decal → weekday → previews）
 │   ├── extract_ai_glyphs.py    ← .ai → 等幅 SVG（五十音グリッド `GRID` が SSOT）
+│   ├── build_previews_cjk.py   ← README 用プレビュー（本家 build_previews を再利用）
 │   ├── extract_dice_dxf.py     ← 旧経路: f3d → DXF（代替・温存）
 │   └── fusion/                 ← 旧経路: Fusion 360 用スクリプト（代替・温存）
 ├── assets/                  ← 旧経路の f3d / DXF（代替・温存）
@@ -127,6 +131,7 @@ py -3.14 scripts/build_cjk.py
   2. cjk     extract_ai_glyphs.extract_all（.ai アートボード2）→ src/glyphs/char_uniXXXX_XXXX.svg
   3. decal   本家 generate_decal.render を CJK グリフだけに適用（5 スキーム、幅可変＋正方形）
   4. weekday 日〜土 7 字を曜日配色（docs/WEEKDAY_COLORING_PLAN.md、build_cjk.WEEKDAY）で描画
+  5. previews docs/previews/hero.png, glyphset.png（README 冒頭のサムネイル）
 ```
 
 - **実行環境**: Python 3.11+。Windows では `py -3.14`（PATH の `python` は依存が入っていない）。
@@ -140,6 +145,8 @@ py -3.14 scripts/build_cjk.py
 - 描画一致統合（`dedupe_renders`）は CJK では行わない（同形グリフが無い）。
 - 欧文の decal PNG は本家にあるため CJK 側では生成しない（SVG のみ等幅版を持つ）。
 - トークン定義・aiscript・Misskey zip は未着手（Misskey 登録段階で本家 `glyph_tokens` 方式に倣う）。
+- **フェーズ2（等幅 OTF）**に着手する前に `docs/HANDOFF_PHASE2.md` を読み、§4 の未決事項を
+  ユーザーと確定してから実装する。
 
 ### アートボードの配置規則（`extract_ai_glyphs.GRID` が SSOT）
 
