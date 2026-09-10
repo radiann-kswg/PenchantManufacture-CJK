@@ -5,6 +5,12 @@ _original-fonts/
 *.zip
 _exported-dist/
 
+# Temporary and Private files
+[tT]emp/
+.[tT]emp/
+[pP]rivate/
+.[pP]rivate/
+
 # Python
 __pycache__/
 *.py[cod]
