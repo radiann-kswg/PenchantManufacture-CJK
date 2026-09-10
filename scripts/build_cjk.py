@@ -37,7 +37,7 @@ import extract_glyphs as eg  # noqa: E402  本家
 import generate_decal as gd  # noqa: E402  本家
 import extract_ai_glyphs as ai  # noqa: E402
 
-FONT = ROOT / "_original-fonts" / ".develop" / "penchant-manufacture_v4.0-beta" / "PenchantManufacture.otf"
+FONT = ROOT / "_original-fonts" / "penchant-manufacture_v4.0-release" / "PenchantManufacture.otf"
 SRC = ROOT / "src" / "glyphs"
 DIST = ROOT / "dist" / "glyphs_decal"
 DIST_SQUARE = ROOT / "dist" / "glyphs_decal_square"

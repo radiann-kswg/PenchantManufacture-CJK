@@ -27,7 +27,7 @@ except ImportError:  # 古い配布名
     import fitz as pymupdf
 
 ROOT = Path(__file__).resolve().parent.parent
-AI_PATH = ROOT / "_original-fonts" / ".develop" / "f-skt penchant-manufactuer-cjk_v4.0.ai"
+AI_PATH = ROOT / "_original-fonts" / ".develop" / "f-skt penchant-manufactuer-cjk_v4.alpha1.ai"
 OUT_DIR = ROOT / "src" / "glyphs"
 ARTBOARD = 1                # 0 始まり。アートボード2 = CJK
 
@@ -63,7 +63,7 @@ GRID: tuple[tuple[str, float, float, float, float, int, tuple[str, ...]], ...] =
     )),
     ("kanji", 5.35, 177.04, 15.0, 15.0, CELL_FULL, (
         "日月火水木金土",
-        "全",
+        "全年",
     )),
 )
 

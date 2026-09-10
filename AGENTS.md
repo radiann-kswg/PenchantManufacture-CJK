@@ -59,9 +59,9 @@ PenchantManufacture-CJK/
 │   └── copilot-instructions.md
 ├── .EN-original/            ← 【サブモジュール】PenchantManufacture_ImageAssets（読み取り専用）
 ├── _original-fonts/         ← 原本（読み取り専用、.gitignore 対象）
+│   ├── penchant-manufacture_v4.0-release/PenchantManufacture.otf ← 欧文の正
 │   └── .develop/
-│       ├── f-skt penchant-manufactuer-cjk_v4.0.ai   ← CJK グリフの正（アートボード2）
-│       └── penchant-manufacture_v4.0-beta/PenchantManufacture.otf ← 欧文の正
+│       └── f-skt penchant-manufactuer-cjk_v4.alpha1.ai   ← CJK グリフの正（アートボード2）
 ├── src/glyphs/              ← 等幅グリフ SVG（欧文 409 字 ＋ CJK。scripts/build_cjk.py が生成）
 ├── dist/
 │   ├── glyphs_decal/{sumi,rust,hazard,patina,nickel,weekday}/  ← CJK デカール PNG（幅可変）
@@ -113,7 +113,7 @@ PenchantManufacture-CJK/
 
 ## CJK グリフの制作フロー
 
-CJK グリフの正は **Illustrator 原本 `_original-fonts/.develop/f-skt penchant-manufactuer-cjk_v4.0.ai`
+CJK グリフの正は **Illustrator 原本 `_original-fonts/.develop/f-skt penchant-manufactuer-cjk_v4.alpha1.ai`
 のアートボード2**。.ai は PDF 互換なので PyMuPDF で直接読む（Illustrator・Adobe コネクタ不要。
 Adobe コネクタは手動プレビュー用途に限り、ビルドには使わない）。
 
@@ -144,7 +144,7 @@ py -3.14 scripts/build_cjk.py
 | ひらがな | (5.35, 37.04) | 15×15 | 992u | `あいうえおかきくけこさしすせそ` / `たちつてとなにぬねのはひふへほ` / `まみむめもらりるれろわをん` |
 | カタカナ | (5.35, 97.04) | 15×15 | 992u | 同上のカタカナ |
 | 半角カタカナ | (244.34, 97.04) | **10**×15 | 496u | 同上（U+FF71〜） |
-| 漢字 | (5.35, 177.04) | 15×15 | 992u | `日月火水木金土` / `全` |
+| 漢字 | (5.35, 177.04) | 15×15 | 992u | `日月火水木金土` / `全年` |
 
 - 各パスは左上座標から `floor((座標 − 原点 + 1.5mm) / ピッチ)` でセルへ割り当てる
   （手置きのズレ ±1mm を吸収、インク幅 ≤ 12mm が前提）。行文字列のインデックスが列。
