@@ -59,15 +59,23 @@ PenchantManufacture-CJK/
 │   └── copilot-instructions.md
 ├── .EN-original/            ← 【サブモジュール】PenchantManufacture_ImageAssets（読み取り専用）
 ├── _original-fonts/         ← 原本（読み取り専用、.gitignore 対象）
-│   ├── f-skt penchant-manufactuer.ai
-│   └── penchant-manufacture_v3.1-release/
-├── assets/
-│   └── sketches/dxf/        ← Fusion 360 スケッチの DXF 書き出し（CJK グリフソース）
-├── src/glyphs/              ← CJK グリフ SVG（DXF → SVG 変換後、本家命名規則に従う）
+│   └── .develop/
+│       ├── f-skt penchant-manufactuer-cjk_v4.0.ai   ← CJK グリフの正（アートボード2）
+│       └── penchant-manufacture_v4.0-beta/PenchantManufacture.otf ← 欧文の正
+├── src/glyphs/              ← 等幅グリフ SVG（欧文 409 字 ＋ CJK。scripts/build_cjk.py が生成）
+├── dist/
+│   ├── glyphs_decal/{sumi,rust,hazard,patina,nickel,weekday}/  ← CJK デカール PNG（幅可変）
+│   └── glyphs_decal_square/{同上}/                               ← 同・正方形（Discord）
 ├── docs/
-│   └── GLYPH_EXTENSION_PLAN.md ← 和文括弧・約物の制作計画（本家 B8 から移管）
+│   ├── GLYPH_EXTENSION_PLAN.md   ← 和文括弧・約物の制作計画（本家 B8 から移管）
+│   ├── WEEKDAY_COLORING_PLAN.md  ← 曜日漢字の配色（decal `weekday` バリアントの正）
+│   └── glyph_aliases.json        ← 本家 extract が生成（自動生成・手編集禁止）
 ├── scripts/
-│   └── fusion/              ← Fusion 360 用スクリプト（DXF 書き出し等）
+│   ├── build_cjk.py            ← 一括ビルド（latin → cjk → decal → weekday）
+│   ├── extract_ai_glyphs.py    ← .ai → 等幅 SVG（五十音グリッド `GRID` が SSOT）
+│   ├── extract_dice_dxf.py     ← 旧経路: f3d → DXF（代替・温存）
+│   └── fusion/                 ← 旧経路: Fusion 360 用スクリプト（代替・温存）
+├── assets/                  ← 旧経路の f3d / DXF（代替・温存）
 └── LICENSE                  ← CC BY 4.0（本家と同一・一律）
 ```
 
@@ -77,31 +85,77 @@ PenchantManufacture-CJK/
 
 ---
 
-## CJK グリフの制作フロー（試験）
+## 等幅メトリクス契約（2026-09-10 確定）
 
-本家はフォント OTF を起点とするが、CJK グリフは未収録のため、
-**Fusion 360 ネイティブデータのスケッチ** を起点とする:
+本リポジトリの成果物は **等幅（半角／全角）** を契約とする。本家（プロポーショナル）との差分は
+横幅の枠だけで、縦は本家契約をそのまま継承する。
+
+| 項目 | 値 | 根拠 |
+| --- | --- | --- |
+| 単位 | 1mm = 66.1u（capHeight 661u = 欧文 .ai の大文字高 10mm） | 欧文 .ai の設計グリッド |
+| 半角枠 | **496u**（7.50mm） | win 帯 991u の半分を切り上げ |
+| 全角枠 | **992u**（15.01mm）＝半角×2 厳守 | ターミナルのセル契約 |
+| 縦帯 | 本家 OS/2 win 帯 **[−198, 793]** を不変で使用（枠高 991u） | 本家「配置の基準」 |
+| かな箱 | 上端 = capHeight 661u（行上端）、下端 = −198u（`y` のディセンダ）＝ 13mm | 作字側の設計 |
+
+- **欧文の半角／全角判定はインク幅**（≤ 496u → 半角）。advance 幅で判定すると
+  `m w 4 # &` 等（advance 499〜534u、インク 462u）が全角落ちするため。
+  全角行きはローマ数字 `Ⅲ Ⅳ Ⅵ Ⅶ Ⅷ Ⅸ Ⅺ Ⅻ`（大小 16 字）のみ。
+- **欧文の枠内配置**: advance が枠に収まれば advance 箱を枠中央、超える字だけインク中央。
+- **CJK の枠内配置**: 縦はアートボードの行上端 ↔ 661u に固定、横はインク bbox を枠中央。
+  和文括弧（隅寄せ）が要る段階で `extract_ai_glyphs.GRID` にブロック単位のフラグを足す。
+- SVG は本家と同じ 512 正方 viewBox・`<!-- frame x=.. y=.. -->` 付き。frame の x が枠幅
+  そのものなので、本家 `generate_decal` が無改造で等幅の余白を尊重する。
+- 枠を超える欧文（現行はなし。`Ⅷ ⅷ` はインク 991u で全角枠に収まる）は WARN 付きで
+  書き出し、フォント側で調整して再ビルドする。
+
+---
+
+## CJK グリフの制作フロー
+
+CJK グリフの正は **Illustrator 原本 `_original-fonts/.develop/f-skt penchant-manufactuer-cjk_v4.0.ai`
+のアートボード2**。.ai は PDF 互換なので PyMuPDF で直接読む（Illustrator・Adobe コネクタ不要。
+Adobe コネクタは手動プレビュー用途に限り、ビルドには使わない）。
 
 ```
-Fusion 360 (.f3d, 例: assets/fusion/Dice (NKO) v1.f3d)
-  │
-  ├─ [DXF 書き出し] scripts/extract_dice_dxf.py（Fusion 不要・f3d 内 ASM バイナリを直接パース）
-  │         ├─ assets/sketches/dxf/char_uniXXXX_XXXX.dxf（6字、mm単位、閉LWPOLYLINE）
-  │         └─ assets/sketches/dxf/preview.png（検証用）
-  │
-  └─ [SVG 化] DXF → アウトラインパス SVG（viewBox 0 0 512 512、本家仕様に準拠）
-            └─ src/glyphs/char_uniXXXX_XXXX.svg
+py -3.14 scripts/build_cjk.py
+  1. latin   本家 extract_glyphs.extract_all（OTF）→ transform/frame を等幅枠へ書き換え
+  2. cjk     extract_ai_glyphs.extract_all（.ai アートボード2）→ src/glyphs/char_uniXXXX_XXXX.svg
+  3. decal   本家 generate_decal.render を CJK グリフだけに適用（5 スキーム、幅可変＋正方形）
+  4. weekday 日〜土 7 字を曜日配色（docs/WEEKDAY_COLORING_PLAN.md、build_cjk.WEEKDAY）で描画
 ```
 
-- `scripts/fusion/`（Fusion 360 内で実行する DXF 書き出しスクリプト）は
-  Fusion が使える環境向けの代替経路として温存する。
-- サイコロ6面のグリフは「う お こ ち ま ん」。面ID・鏡像・回転の同定は
-  `scripts/extract_dice_dxf.py` の `FACE_MAP` が SSOT（彫り込み底面の重複
-  ループ＝1109「お」・922「ま」は除外済み）。
+- **実行環境**: Python 3.11+。Windows では `py -3.14`（PATH の `python` は依存が入っていない）。
+  依存は `py -3.14 -m pip install -r requirements.txt`（本家の requirements を `-r` で取り込み＋ PyMuPDF）。
+  本家 decal が使う **libcairo の DLL は pip では入らない**ので、手元の DLL ディレクトリを
+  環境変数で渡す: `$env:CAIRO_DLL_DIR = "C:\Program Files\KiCad\10.0\bin"`（KiCad 同梱の
+  `cairo-2.dll` を流用。GTK ランタイム等でも可）。
+- 本家スクリプトは `sys.path` 経由で import する。**`.EN-original/` は変更しない**。
+  本家 `generate_decal` の出力先はモジュール定数固定なので、`build_cjk.decal` が
+  render / `_save_all_sizes` / `frame_box` を直接呼んで CJK 側の `dist/` へ書く。
+- 描画一致統合（`dedupe_renders`）は CJK では行わない（同形グリフが無い）。
+- 欧文の decal PNG は本家にあるため CJK 側では生成しない（SVG のみ等幅版を持つ）。
+- トークン定義・aiscript・Misskey zip は未着手（Misskey 登録段階で本家 `glyph_tokens` 方式に倣う）。
+
+### アートボードの配置規則（`extract_ai_glyphs.GRID` が SSOT）
+
+| ブロック | 原点(mm, 左上のインク左端) | ピッチ | 枠 | 行文字列 |
+| --- | --- | --- | --- | --- |
+| ひらがな | (5.35, 37.04) | 15×15 | 992u | `あいうえおかきくけこさしすせそ` / `たちつてとなにぬねのはひふへほ` / `まみむめもらりるれろわをん` |
+| カタカナ | (5.35, 97.04) | 15×15 | 992u | 同上のカタカナ |
+| 半角カタカナ | (244.34, 97.04) | **10**×15 | 496u | 同上（U+FF71〜） |
+| 漢字 | (5.35, 177.04) | 15×15 | 992u | `日月火水木金土` / `全` |
+
+- 各パスは左上座標から `floor((座標 − 原点 + 1.5mm) / ピッチ)` でセルへ割り当てる
+  （手置きのズレ ±1mm を吸収、インク幅 ≤ 12mm が前提）。行文字列のインデックスが列。
+- 字を足すときは **行文字列を伸ばすか行を追加**する。や行・小書き・濁点は追加時にブロック調整。
+- 行文字列に無い列にパスがあると WARN、グリッド外のパスは無視して件数を報告する。
+- 旧経路（Fusion `.f3d` → `extract_dice_dxf.py` → DXF）は代替として温存し、ビルドには乗せない。
 
 ### 命名規則（本家準拠＋CJK 拡張）
 
-かなは AGL 名を持たないため、本家のフォールバック規則 `uniXXXX` を用いる:
+かな・カタカナ・漢字は AGL 名を持たないため、本家のフォールバック規則 `uniXXXX` を用いる
+（`extract_ai_glyphs.py` が生成。欧文は本家と同じ AGL 名ステム）:
 
 | 文字 | コードポイント | ステム |
 | --- | --- | --- |
@@ -111,6 +165,8 @@ Fusion 360 (.f3d, 例: assets/fusion/Dice (NKO) v1.f3d)
 | ち | U+3061 | `char_uni3061_3061` |
 | ま | U+307E | `char_uni307E_307E` |
 | ん | U+3093 | `char_uni3093_3093` |
+| ｱ | U+FF71 | `char_uniFF71_FF71` |
+| 日 | U+65E5 | `char_uni65E5_65E5` |
 
 ---
 
@@ -118,6 +174,8 @@ Fusion 360 (.f3d, 例: assets/fusion/Dice (NKO) v1.f3d)
 
 - `.EN-original/`（サブモジュール）内ファイルの変更・削除
 - `_original-fonts/` 内ファイルの変更・削除
+- `src/glyphs/` `dist/` への直接ファイル配置（`scripts/build_cjk.py` 経由のみ）
+- 等幅枠（496u / 992u）・win 帯・`GRID` の原点／ピッチを断りなく変えること（登録済み絵文字の再アップロードを招く）
 - 第三者フォント・商用グリフのグリフパス流用
 - ライセンス表記（CC BY 4.0 / 著作者名）の削除・改ざん
 - 本家（CC BY 4.0）と異なるライセンスを CJK 拡張部分へ付与すること
