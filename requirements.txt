@@ -1,2 +1,10 @@
+# PenchantManufacture-CJK — Python 依存ライブラリ（Windows は py -3.14 で実行）
+# 本家（サブモジュール）の依存をそのまま取り込む
+-r .EN-original/requirements.txt
+
+# .ai（PDF 互換）のパス抽出（extract_ai_glyphs.py）
+pymupdf>=1.24
+
+# 旧経路: f3d → DXF（extract_dice_dxf.py、代替・温存）
 ezdxf>=1.1
 matplotlib>=3.7
