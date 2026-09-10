@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 512 512"
+     width="512" height="512">
+  <title>PenchantManufacture-CJK 日</title>
+  <!-- frame x=2.048,509.952 y=0.000,507.392 -->
+  <g transform="matrix(33.843200,0,0,33.843200,-94.183,-5924.016)">
+    <path d="M13.347 179.039L13.347 182.039L7.847 182.039L7.347 182.539L7.347 179.039L13.347 179.039M7.347 188.039V184.039H13.347V188.039ZM5.347 190.039H15.347V177.039H5.347Z" fill="#000000"/>
+  </g>
+</svg>
