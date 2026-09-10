@@ -106,6 +106,10 @@ PenchantManufacture-CJK/
   和文括弧（隅寄せ）が要る段階で `extract_ai_glyphs.GRID` にブロック単位のフラグを足す。
 - SVG は本家と同じ 512 正方 viewBox・`<!-- frame x=.. y=.. -->` 付き。frame の x が枠幅
   そのものなので、本家 `generate_decal` が無改造で等幅の余白を尊重する。
+- CJK の `<path>` は **`fill-rule="evenodd"`**。PyMuPDF が返す矩形（`re`）の向き情報は
+  Illustrator 出力では当てにならず（ま・は・ほ と 日 で符号が矛盾）、nonzero だと穴が埋まる。
+  抽出時に MuPDF が描いた原本ラスタと照合し、面で残る差があれば WARN を出す
+  （`extract_ai_glyphs._verify`）。フェーズ2（OTF 化）では nonzero 化（向きの正規化）が必要。
 - 枠を超える欧文（現行はなし。`Ⅷ ⅷ` はインク 991u で全角枠に収まる）は WARN 付きで
   書き出し、フォント側で調整して再ビルドする。
 

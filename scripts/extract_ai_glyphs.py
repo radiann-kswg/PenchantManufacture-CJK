@@ -7,6 +7,7 @@
 出力は本家 ``extract_glyphs.py`` と同じ 512 正方 SVG（``<!-- frame -->`` 付き）:
     縦: 行上端 ↔ capHeight 661u。win 帯 [-198, 793] 上端が y=0（本家契約そのまま）
     横: インク bbox を枠（半角 496u / 全角 992u）の中央に置く
+    塗り: fill-rule=evenodd（PDF 側の周り方に依存せず穴を再現。MuPDF のラスタと照合して検証）
     ファイル名: char_uniXXXX_XXXX.svg（かな・漢字は AGL 名を持たないため）
 
 使い方:
@@ -18,9 +19,14 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
+from io import BytesIO
 from pathlib import Path
 
+import cairosvg
 import click
+import numpy as np
+from PIL import Image
+from scipy.ndimage import binary_erosion
 try:
     import pymupdf
 except ImportError:  # 古い配布名
@@ -75,13 +81,12 @@ def _path_d(items: list, close: bool) -> str:
     for it in items:
         op = it[0]
         if op == "re":
-            # 向き（it[2] = ±1）で穴（ロ・日 の内側）を表すため、PDF の re と同じ順序で辿る
+            # PyMuPDF の re は向き情報（±1）が Illustrator 出力では当てにならない
+            # （ま・は・ほ と 日 で符号が矛盾する）。穴は fill-rule=evenodd で表すので
+            # 矩形の周り方は問わない。
             r = it[1]
             x0, y0, x1, y1 = (v * PT_TO_MM for v in (r.x0, r.y0, r.x1, r.y1))
-            if len(it) > 2 and it[2] < 0:
-                out.append(f"M{x0:.3f} {y1:.3f}V{y0:.3f}H{x1:.3f}V{y1:.3f}Z")
-            else:
-                out.append(f"M{x0:.3f} {y1:.3f}H{x1:.3f}V{y0:.3f}H{x0:.3f}Z")
+            out.append(f"M{x0:.3f} {y0:.3f}H{x1:.3f}V{y1:.3f}H{x0:.3f}Z")
             cur = None
             continue
         p0 = it[1]
@@ -141,7 +146,7 @@ def glyph_svg(char: str, paths: list[str], ink: tuple[float, float, float, float
 
     fy1 = (WIN_TOP - WIN_BOTTOM) * scale
     frame = f"  <!-- frame x={tx_cell:.3f},{tx_cell + cell * scale:.3f} y=0.000,{fy1:.3f} -->\n"
-    body = "".join(f'    <path d="{d}" fill="#000000"/>\n' for d in paths)
+    body = "".join(f'    <path d="{d}" fill="#000000" fill-rule="evenodd"/>\n' for d in paths)
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<svg xmlns="http://www.w3.org/2000/svg"\n'
@@ -154,6 +159,29 @@ def glyph_svg(char: str, paths: list[str], ink: tuple[float, float, float, float
         "  </g>\n"
         "</svg>\n"
     )
+
+
+def _verify(page: object, char: str, paths: list[str],
+            ink: tuple[float, float, float, float]) -> float:
+    """MuPDF が描いた原本のラスタと、自前 SVG（evenodd）のラスタの不一致率を返す。
+
+    穴の埋まり・欠け・向きの取り違えを機械的に検出する唯一のチェック。
+    """
+    s = 8  # px/mm
+    pad = 0.5
+    x0, y0, x1, y1 = ink[0] - pad, ink[1] - pad, ink[2] + pad, ink[3] + pad
+    clip = pymupdf.Rect(x0 / PT_TO_MM, y0 / PT_TO_MM, x1 / PT_TO_MM, y1 / PT_TO_MM)
+    pix = page.get_pixmap(clip=clip, dpi=round(25.4 * s), colorspace="gray")
+    ref = np.frombuffer(pix.samples, np.uint8).reshape(pix.h, pix.w) < 128
+    body = "".join(f'<path d="{d}" fill-rule="evenodd"/>' for d in paths)
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x0} {y0} {x1 - x0} {y1 - y0}" '
+           f'width="{pix.w}" height="{pix.h}">{body}</svg>')
+    png = cairosvg.svg2png(bytestring=svg.encode(), output_width=pix.w, output_height=pix.h,
+                           background_color="white")
+    mine = np.asarray(Image.open(BytesIO(png)).convert("L")) < 128
+    # 輪郭 1px の差（ラスタライザ差・丸め）は捨て、面で残る差＝穴の埋まり／欠けだけ数える
+    core = binary_erosion(ref ^ mine, iterations=1)
+    return float(core.mean())
 
 
 def extract_all(ai_path: Path = AI_PATH, out_dir: Path = OUT_DIR,
@@ -185,6 +213,9 @@ def extract_all(ai_path: Path = AI_PATH, out_dir: Path = OUT_DIR,
         ink = (min(d["rect"].x0 for d in ds) * PT_TO_MM, min(d["rect"].y0 for d in ds) * PT_TO_MM,
                max(d["rect"].x1 for d in ds) * PT_TO_MM, max(d["rect"].y1 for d in ds) * PT_TO_MM)
         paths = [_path_d(d["items"], d["closePath"]) for d in ds]
+        mismatch = _verify(page, char, paths, ink)
+        if mismatch > 0.0:
+            print(f"  WARN: {char} の描画が原本と {mismatch:.2%} 不一致（穴・重なりを確認）")
         svg = glyph_svg(char, paths, ink, y0 + row * py, cell)
         cp = ord(char)
         out_path = out_dir / f"char_uni{cp:04X}_{cp:04X}.svg"
