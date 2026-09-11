@@ -9,7 +9,9 @@
     4. weekday 曜日漢字 7 字を曜日配色（docs/WEEKDAY_COLORING_PLAN.md）でデカール化
     5. previews README 用プレビュー（docs/previews/hero.png, glyphset.png）
 
-使い方（Windows は ``py -3.14``。libcairo が無ければ ``$env:CAIRO_DLL_DIR`` で DLL の場所を渡す）:
+使い方（Windows は ``py -3.14``。libcairo が無ければ ``$env:CAIRO_DLL_DIR`` で DLL の場所を渡す。
+macOS は venv の ``python`` に読み替え、Homebrew の libcairo は
+``DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib`` で見つけさせる）:
     py -3.14 scripts/build_cjk.py
     py -3.14 scripts/build_cjk.py --no-decal        # SVG だけ更新
     py -3.14 scripts/build_cjk.py --font ... --ai ...

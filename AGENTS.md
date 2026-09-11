@@ -126,7 +126,7 @@ CJK グリフの正は **Illustrator 原本 `_original-fonts/.develop/f-skt penc
 Adobe コネクタは手動プレビュー用途に限り、ビルドには使わない）。
 
 ```
-py -3.14 scripts/build_cjk.py
+py -3.14 scripts/build_cjk.py        # macOS: venv の python（例: ../.venv/bin/python scripts/build_cjk.py）
   1. latin   本家 extract_glyphs.extract_all（OTF）→ transform/frame を等幅枠へ書き換え
   2. cjk     extract_ai_glyphs.extract_all（.ai アートボード2）→ src/glyphs/char_uniXXXX_XXXX.svg
   3. decal   本家 generate_decal.render を CJK グリフだけに適用（5 スキーム、幅可変＋正方形）
@@ -139,6 +139,11 @@ py -3.14 scripts/build_cjk.py
   本家 decal が使う **libcairo の DLL は pip では入らない**ので、手元の DLL ディレクトリを
   環境変数で渡す: `$env:CAIRO_DLL_DIR = "C:\Program Files\KiCad\10.0\bin"`（KiCad 同梱の
   `cairo-2.dll` を流用。GTK ランタイム等でも可）。
+- **実行環境（macOS）**: Python 3.14 の venv（例: ImageAssets 直下の共有 `../.venv`）へ
+  `pip install -r requirements.txt`。libcairo は `brew install cairo` で入れる。Homebrew の
+  `/opt/homebrew/lib` は dyld の既定の探索先に無いため `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib`
+  を渡す（共有 venv では `site-packages/sitecustomize.py` が起動時に自動設定）。
+  コマンド例の `py -3.14` は venv の `python` に読み替える。
 - 本家スクリプトは `sys.path` 経由で import する。**`.EN-original/` は変更しない**。
   本家 `generate_decal` の出力先はモジュール定数固定なので、`build_cjk.decal` が
   render / `_save_all_sizes` / `frame_box` を直接呼んで CJK 側の `dist/` へ書く。

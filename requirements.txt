@@ -1,4 +1,4 @@
-# PenchantManufacture-CJK — Python 依存ライブラリ（Windows は py -3.14 で実行）
+# PenchantManufacture-CJK — Python 依存ライブラリ（Windows は py -3.14、macOS は Python 3.14 の venv で実行）
 # 本家（サブモジュール）の依存をそのまま取り込む
 -r .EN-original/requirements.txt
 

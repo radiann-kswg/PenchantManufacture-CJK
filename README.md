@@ -98,7 +98,7 @@ variant = `sumi`（墨・**既定**／二画面）/ `rust`（酸鉄）/ `hazard`
 
 ### 必要環境
 
-- Python 3.11+（Windows では `py -3.14` を使用）
+- Python 3.11+（Windows では `py -3.14`、macOS では Python 3.14 の venv を使用）
 - 依存ライブラリ（`requirements.txt`。本家の依存を `-r` で取り込み＋ PyMuPDF）
 - サブモジュール `.EN-original/` の取得
 
@@ -114,7 +114,19 @@ Windows で本家デカール生成（cairosvg）が `no library called "cairo-2
 $env:CAIRO_DLL_DIR = "C:\Program Files\KiCad\10.0\bin"
 ```
 
+macOS（Homebrew）では libcairo を Homebrew で入れ、venv に依存を導入します。
+Homebrew の `/opt/homebrew/lib` は既定のライブラリ探索先に無いため、環境変数で渡します。
+
+```bash
+brew install cairo
+python3 -m venv ../.venv                                # 例: ImageAssets 直下に共有 venv
+../.venv/bin/python -m pip install -r requirements.txt
+export DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib
+```
+
 ### グリフアセットの生成
+
+以下のコマンド例は Windows 表記です。macOS では `py -3.14` を venv の `python`（例: `../.venv/bin/python`）に読み替えます。
 
 ```bash
 # 全ステップ一括: 欧文 OTF → 等幅 SVG、.ai → CJK SVG、CJK デカール PNG、曜日配色、プレビュー

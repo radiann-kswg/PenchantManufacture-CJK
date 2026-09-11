@@ -15,10 +15,10 @@
 | CJK SVG | `src/glyphs/char_uniXXXX_XXXX.svg` 73 字（ひらがな 18・カタカナ 23・半角カタカナ 23・漢字 9）。`fill-rule="evenodd"` |
 | デカール PNG | `dist/glyphs_decal{,_square}/{sumi,rust,hazard,patina,nickel,weekday}/` CJK のみ 1,488 点 |
 | プレビュー | `docs/previews/hero.png` `glyphset.png`（`build_cjk.py` が自動生成） |
-| ビルド | `py -3.14 scripts/build_cjk.py`（約 70 秒）。WARN ゼロで通る |
+| ビルド | Windows: `py -3.14 scripts/build_cjk.py`（約 70 秒）／macOS: venv の `python scripts/build_cjk.py`（約 30 秒）。WARN ゼロで通る |
 | 未着手 | **等幅 OTF**、Misskey zip・aiscript 対応表（`glyph_tokens` 方式）、濁点・や行・和文括弧 |
 
-コミット履歴（フェーズ1、すべて未 push）: `cf86b23` scripts → `d104d26` glyphs → `3be84be` docs →
+コミット履歴（フェーズ1、push 済み）: `cf86b23` scripts → `d104d26` glyphs → `3be84be` docs →
 `c60e743`/`cd619b0` v4.alpha1 切替 → `e61d18e`/`60a8630` 穴修正 → 本資料・README のコミット。
 
 ---
@@ -65,7 +65,7 @@ SVG px → フォント座標は `u_x = (px_x − X0) / 0.512`、`u_y = 793 − 
 4. **検証**（最小の自己チェック）: 全グリフの advance ∈ {496, 992}、CJK の cmap が
    `GRID` の文字集合と一致、`hb-shape` 相当（`fontTools` の `getGlyphSet` でも可）で
    「にほん」「ｺﾝﾃﾅ」の合計幅が 992×3 / 496×4 になること、任意ターミナル
-   （Windows Terminal / WezTerm）で半角 2 個＝全角 1 個に揃うことを目視。
+   （Windows Terminal / WezTerm / macOS のターミナル・iTerm2）で半角 2 個＝全角 1 個に揃うことを目視。
 5. 出力先は `dist/fonts/PenchantManufacture-CJK-Mono.otf`（仮）。`build_cjk.py` に
    `font` ステップを足すか、`scripts/build_font.py` を分けるかは §4 で決める。
 
@@ -102,6 +102,14 @@ CJK 原本の .ai にはアートボード1 に欧文一式もあるので、Fon
 - **Windows の実行系**: `py -3.14` を使う（PATH の `python` は依存が入っていない）。
   libcairo が無いので `$env:CAIRO_DLL_DIR="C:\Program Files\KiCad\10.0\bin"` を渡す
   （`build_cjk.py` 冒頭で PATH に足す）。`scipy` は導入済み。
+- **macOS の実行系**（2026-09-11 に Windows から引き継ぎ）: Python 3.14 の venv（ImageAssets 直下の共有 `.venv`）。
+  libcairo は `brew install cairo`。Homebrew の `/opt/homebrew/lib` は dyld の既定の探索先に無いので
+  `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib` を渡す（共有 venv では `sitecustomize.py` が自動設定）。
+  原本 `_original-fonts/` は Dropbox の `Creative Cloud Files/Illustrator/作字/` から複製した
+  （`_export/penchant-manufacture_v4.0-release/` 一式と、`f-skt penchant-manufactuer-cjk.ai` を
+  `.develop/f-skt penchant-manufactuer-cjk_v4.alpha1.ai` として）。この構成で全ステップを再ビルドし、
+  SVG 482 字・デカール PNG 1,488 点がコミット済みの成果物とバイト一致（差分は `docs/glyph_aliases.json`
+  の生成時刻のみ）することを確認済み。
 - **PyMuPDF の `re` 向き**は当てにならない（`ま は ほ` と `日 ロ` で ±1 の意味が矛盾）。
   SVG は evenodd で逃げているので、**OTF 化では skia-pathops で必ず向きを正規化**する。
   `extract_ai_glyphs._verify` が MuPDF ラスタと照合しているので、抽出側の崩れは WARN で出る。
