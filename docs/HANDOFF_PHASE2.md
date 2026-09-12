@@ -1,9 +1,21 @@
-# フェーズ2 引継ぎ資料 — 等幅 OTF の生成環境
+# フェーズ2 記録 — 等幅 OTF の生成環境
 
-> 作成: 2026-09-10（フェーズ1 完了時点）。次セッションが **等幅 OTF（フォントファイル）の
-> 生成環境** に着手するための資料。仕様の正は [AGENTS.md](../AGENTS.md)、このファイルは
-> 「現状」「決まっていること」「決まっていないこと」「手順案」「罠」をまとめたもの。
-> 着手前に本資料の §4 の未決事項をユーザーと確定（グリル）してから実装に入ること。
+> 作成: 2026-09-10（フェーズ1 完了時点）。**2026-09-12 にフェーズ2 完了**（`scripts/build_font.py`、
+> `dist/fonts/PenchantManufactureCJKMono-Regular.otf` v0.1.0）。仕様の正は [AGENTS.md](../AGENTS.md)、
+> このファイルは「確定契約」「実装方針」「§4 の決定事項」「罠」の記録。§0 に完了時点の要約を置く。
+
+---
+
+## 0. 完了時点の要約（2026-09-12、Windows で実装）
+
+| 項目 | 結果 |
+| --- | --- |
+| 実装 | `scripts/build_font.py`（生成 `build` ＋ 検証 `verify`）、`scripts/metrics.py`（契約定数の唯一の置き場。`extract_ai_glyphs` / `build_cjk` も参照するよう変更） |
+| 出力 | `dist/fonts/PenchantManufactureCJKMono-Regular.otf`（487 グリフ / cmap 486 / 約 75 KB）。`--ttf` で TTF（約 42 KB）も生成可 |
+| 統合 | `build_cjk.py` のステップ 3/6（`--no-font` で省略）。単独実行は約 5 秒、libcairo 不要 |
+| 検証 | advance ∈ {496, 992}・cmap・欧文の座標一致・CJK ラスタ一致・幅合計 すべて OK。2 回ビルドして SHA-256 一致（再現性）。SVG / PNG は変更前とバイト一致（metrics.py 化で生成物は変わらない） |
+| 目視 | Pillow で描画し、半角 2 字＝全角 1 字・は ほ ま 日 ロ の穴・半角カナを確認（ターミナル実機は未確認） |
+| 依存 | `skia-pathops`（requirements.txt に追加。cp310-abi3 wheel で Python 3.14 でも導入可） |
 
 ---
 
@@ -16,7 +28,7 @@
 | デカール PNG | `dist/glyphs_decal{,_square}/{sumi,rust,hazard,patina,nickel,weekday}/` CJK のみ 1,488 点 |
 | プレビュー | `docs/previews/hero.png` `glyphset.png`（`build_cjk.py` が自動生成） |
 | ビルド | Windows: `py -3.14 scripts/build_cjk.py`（約 70 秒）／macOS: venv の `python scripts/build_cjk.py`（約 30 秒）。WARN ゼロで通る |
-| 未着手 | **等幅 OTF**、Misskey zip・aiscript 対応表（`glyph_tokens` 方式）、濁点・や行・和文括弧 |
+| 未着手 | ~~等幅 OTF~~（2026-09-12 完了）、Misskey zip・aiscript 対応表（`glyph_tokens` 方式）、濁点・や行・和文括弧 |
 
 コミット履歴（フェーズ1、push 済み）: `cf86b23` scripts → `d104d26` glyphs → `3be84be` docs →
 `c60e743`/`cd619b0` v4.alpha1 切替 → `e61d18e`/`60a8630` 穴修正 → 本資料・README のコミット。
@@ -43,11 +55,15 @@ SVG px → フォント座標は `u_x = (px_x − X0) / 0.512`、`u_y = 793 − 
 
 ---
 
-## 3. OTF 化の手順案（推奨順）
+## 3. OTF 化の手順（3-A で実装済み）
 
-### 3-A. fontTools で直接組む（推奨）
+### 3-A. fontTools で直接組む（採用・実装済み）
 
 依存追加は `skia-pathops`（重なり除去・向き正規化）のみ。fontmake / ufo は不要。
+実装との差分: 欧文は T2CharString を「再構築」ではなく本家 glyphSet を `TransformPen` →
+`T2CharStringPen(roundTolerance=0)` で描き直す（座標は丸めず本家のまま）。CJK は
+`T2CharStringPen` の既定（整数へ丸め）。検証 4 の `hb-shape` は使わず、fontTools の `hmtx` 合計と
+winding ラスタ（numpy）で代替した。
 
 1. **欧文**: 本家 OTF から CFF CharString をそのまま複製し、`hmtx` の advance を 496/992 に、
    アウトラインを `gx` だけ平行移動（T2 CharString の再構築は `T2CharStringPen` に
@@ -78,26 +94,51 @@ CJK 原本の .ai にはアートボード1 に欧文一式もあるので、Fon
 
 ---
 
-## 4. 未決事項（着手前にユーザーと確定する）
+## 4. 決定事項（2026-09-12 にユーザーと確定。旧「未決事項」）
 
-1. **フォント名**: family / style / PostScript 名（例 `PenchantManufacture-CJK` + `Mono`?）、
-   本家 `PenchantManufacture` との衝突回避、`name` テーブルのバージョン文字列と著作権表記。
-2. **収録範囲**: 欧文 409 字を全部入れるか（推奨: 入れる。等幅ターミナル用途なら必須）。
-   本家の異体字 cmap（同一グリフへの再マップ、現行 0 件）の扱い。
-3. **半角カタカナの cmap**: U+FF71〜 のみか、全角カナ U+30A2〜 の半角形として GSUB `hwid` も持たせるか。
-4. **East Asian Width Ambiguous 字**（ローマ数字・Ø・± など）を全角にする方針の是非。
-   現行の判定はインク幅なので Ⅲ〜ⅻ だけ全角。ターミナルの EAW 設定と衝突しないか確認。
-5. **空白グリフ**: `space` = 496u、全角スペース U+3000 = 992u を追加するか（本家は space を持つ）。
-6. **`.notdef`／未収録字の扱い**、およびフォールバック用の半角・全角ダミー枠グリフの要否。
-7. **出力形式**: OTF(CFF) のみか、TTF も要るか（Windows Terminal は OTF 可）。
-8. **ビルド統合**: `build_cjk.py` の 1 ステップにするか、`scripts/build_font.py` に分けるか。
-   `dist/fonts/` を追跡するか（`.gitignore` の `dist/` 例外は現状 PNG のみ想定）。
-9. **フェーズ1 の残件との順序**: Misskey zip・aiscript 対応表（`glyph_tokens`）を先にやるか後か。
-10. **曜日配色の xterm 列**（`docs/WEEKDAY_COLORING_PLAN.md`）をどこで使うか（フォント外の話）。
+| # | 項目 | 決定 |
+| --- | --- | --- |
+| 1 | フォント名 | family `PenchantManufacture CJK Mono` / style `Regular` / PS 名 `PenchantManufactureCJKMono-Regular`。version `0.1.0`（.ai v4.alpha1 対応、`build_font.VERSION`）。著作権 `© RadianN_kswg / ラジアン（柏木主税）`（name ID 0。CFF Notice は latin-1 限定なので `© RadianN_kswg`）、license ID 13/14 に CC BY 4.0 と URL |
+| 2 | 収録範囲 | 欧文 409 字を全部（本家 cmap をそのまま継承。異体字 cmap は 0 件のまま継承されるので特別扱い不要） |
+| 3 | 半角カナ cmap | U+FF71〜 の cmap のみ。GSUB `hwid` は入れない（ターミナルは feature を適用しない） |
+| 4 | EAW Ambiguous | ローマ数字 Ⅲ〜ⅻ は 992u のまま（インク 991u で縮められない）。README に ambiguous width = wide 前提と明記。± Ø 等は半角のまま（混在許容） |
+| 5 | 空白 | `space` 496u（本家 219u から変更）、U+3000 `uni3000` 992u を追加。U+00A0 は本家の `nonbreakingspace`（空・496u）を継承 |
+| 6 | .notdef | 496u の中空矩形 1 つ。全角ダミー枠は作らない。本家の advance 0 の `.null` `controlLF` `controlCR` は持ち込まない（全 advance を {496, 992} に揃える） |
+| 7 | 出力形式 | OTF(CFF) のみ。`--ttf` で TTF も生成可（直線のみなので `TTGlyphPen` ＋ `ReverseContourPen` で無劣化） |
+| 8 | ビルド統合 | `scripts/build_font.py` を分け、`build_cjk.py` のステップ 3/6 から呼ぶ（当初案の 6/6 から前倒し。`--no-decal` でも OTF は作る）。`dist/fonts/*.otf` は git 追跡し、`head` の日時固定で再現性を確保、字形変更時のみコミット |
+| 9 | 順序 | OTF を先（本資料）。Misskey zip・aiscript 対応表はフェーズ3 |
+| 10 | 曜日配色 xterm 列 | フォント外＝対象外 |
+
+### 残件・次の候補
+
+- **ターミナル実機での目視**（Windows Terminal / WezTerm / iTerm2）: 半角 2 個＝全角 1 個、
+  ambiguous=wide でのローマ数字、行間（win 帯 991u vs typo 1060u の扱い）。
+- 字形追加時: `.ai` 更新 → `build_cjk.py` → `build_font.VERSION` を上げる → OTF をコミット。
+- 将来 GSUB `hwid` / `vert`、OFL 移行（本家とセット）は AGENTS.md の方針どおり再検討。
 
 ---
 
-## 5. 罠・環境メモ（フェーズ1 で判明）
+## 5. 罠・環境メモ
+
+### フェーズ2 で判明
+
+- **`char_uni*` の glob は欧文も拾う**: `char_union_222A` `char_uni2071_2071`（AGL 名が無く
+  `uniXXXX` フォールバックの字も本家に 6 字ある）。CJK の判定は `build_font.cjk_codepoint`
+  （`^char_uni([0-9A-F]{4})_\1$`）で行い、`stem[8:12]` の切り出しや `startswith("char_uni")` は使わない。
+  同様に本家グリフ名にも `uniXXXX` があるので、「丸めるかどうか」は名前ではなく `Glyph.exact` で持つ。
+- **CFF の文字列は latin-1 限定**: 日本語を含む著作権表記は `name` テーブルにだけ置く
+  （`fb.setupCFF` の `Notice` に入れると `UnicodeEncodeError`）。`name` は Windows platform のみ
+  （`mac=False`。mac roman では日本語が入らない）。
+- **再現性**: `FontBuilder` は `head.created/modified` に現在時刻を入れる。`setupHead` に固定値
+  （`BUILD_TIME`）を渡す。`TTFont(recalcTimestamp=False)` は FontBuilder が既定でやってくれる。
+- **検証の一時ファイル**: `tempfile.TemporaryDirectory` を抜けると消えるので、再抽出 SVG は
+  `with` の中で読み切る。
+- **T2CharStringPen の丸め**: 既定 `roundTolerance=0.5` は全座標を整数化する。本家複製は
+  `roundTolerance=0`（実数のまま。OTF が 75 KB になるのはこのため。TTF は整数なので 42 KB）。
+- **PowerShell の文字化け**: Desktop Commander 経由では `[Console]::OutputEncoding` を UTF-8 に、
+  `$env:PYTHONUTF8=1` を付けると Python の日本語出力が読める。`Get-Content` は `-Encoding UTF8`。
+
+### フェーズ1 で判明
 
 - **Windows の実行系**: `py -3.14` を使う（PATH の `python` は依存が入っていない）。
   libcairo が無いので `$env:CAIRO_DLL_DIR="C:\Program Files\KiCad\10.0\bin"` を渡す

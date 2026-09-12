@@ -15,6 +15,13 @@
 > **ライセンス**: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.ja)（本家と同一・由来を問わず一律）
 > **状態**: alpha（試験運用）。収録字は五十音の一部で、公開品質に達するまで非公開で運用しています。
 
+### 等幅フォント（OTF）
+
+`dist/fonts/PenchantManufactureCJKMono-Regular.otf` — family **PenchantManufacture CJK Mono**、
+半角 496u／全角 992u の等幅 OpenType（CFF）フォント。欧文 409 字（本家の字形をそのまま複製）と
+CJK 73 字、`space`（半角）・U+3000（全角）を収録し、ターミナルでは半角 2 文字＝全角 1 文字に揃います。
+ローマ数字 Ⅲ〜ⅻ は全角なので、ターミナルの **East Asian Ambiguous width を「wide」** に設定して使います。
+
 ### 収録グリフ一覧（工業デカール）
 
 かな・カタカナ・半角カタカナ・漢字を、本家と同じ 5 種の工業デカール
@@ -66,10 +73,13 @@ PenchantManufacture-CJK/
 ├── src/
 │   └── glyphs/                       # 等幅グリフ SVG（欧文 409 ＋ CJK 73、512 正方・配置フレーム付き）
 ├── dist/
+│   ├── fonts/                        # 等幅 OTF: PenchantManufactureCJKMono-Regular.otf（build_font.py が生成）
 │   ├── glyphs_decal/{variant}/       # CJK 工業デカール 幅可変PNG（Misskey向け・マスター）
 │   └── glyphs_decal_square/{variant}/ # CJK 工業デカール 正方形PNG（Discord向け）
 ├── scripts/
-│   ├── build_cjk.py                  # 一括ビルド（latin → cjk → decal → weekday → previews）
+│   ├── build_cjk.py                  # 一括ビルド（latin → cjk → font → decal → weekday → previews）
+│   ├── build_font.py                 # 等幅 OTF の生成と検証（本家 CFF 複製 ＋ CJK SVG → skia-pathops）
+│   ├── metrics.py                    # 等幅メトリクス契約の定数（SVG 抽出と OTF 生成が共用）
 │   ├── extract_ai_glyphs.py          # Illustrator 原本 → 等幅 SVG（五十音グリッド GRID が SSOT）
 │   ├── build_previews_cjk.py         # README 用プレビュー画像
 │   ├── extract_dice_dxf.py           # 旧経路: Fusion 360 f3d → DXF（代替・温存）
@@ -99,7 +109,7 @@ variant = `sumi`（墨・**既定**／二画面）/ `rust`（酸鉄）/ `hazard`
 ### 必要環境
 
 - Python 3.11+（Windows では `py -3.14`、macOS では Python 3.14 の venv を使用）
-- 依存ライブラリ（`requirements.txt`。本家の依存を `-r` で取り込み＋ PyMuPDF）
+- 依存ライブラリ（`requirements.txt`。本家の依存を `-r` で取り込み＋ PyMuPDF ＋ skia-pathops）
 - サブモジュール `.EN-original/` の取得
 
 ```bash
@@ -129,11 +139,15 @@ export DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib
 以下のコマンド例は Windows 表記です。macOS では `py -3.14` を venv の `python`（例: `../.venv/bin/python`）に読み替えます。
 
 ```bash
-# 全ステップ一括: 欧文 OTF → 等幅 SVG、.ai → CJK SVG、CJK デカール PNG、曜日配色、プレビュー
+# 全ステップ一括: 欧文 OTF → 等幅 SVG、.ai → CJK SVG、等幅 OTF、CJK デカール PNG、曜日配色、プレビュー
 py -3.14 scripts/build_cjk.py
 
-# SVG だけ更新（PNG を生成しない）
+# SVG と等幅 OTF だけ更新（PNG を生成しない）
 py -3.14 scripts/build_cjk.py --no-decal
+
+# 等幅 OTF だけ生成・検証（libcairo 不要）／ TTF も出力
+py -3.14 scripts/build_font.py
+py -3.14 scripts/build_font.py --ttf
 
 # .ai の抽出だけ対象確認
 py -3.14 scripts/extract_ai_glyphs.py --dry-run
@@ -141,6 +155,7 @@ py -3.14 scripts/extract_ai_glyphs.py --dry-run
 
 原本（`_original-fonts/`）は `.gitignore` 対象のため、ビルドは原本を持つ環境でのみ再現できます。
 生成物（`src/glyphs/` `dist/` `docs/previews/`）はコミットに含めています。
+OTF は `head` の日時を固定しているので、字形を変えなければ再ビルドしてもバイト一致します。
 
 ### SNS カスタム絵文字の登録
 
@@ -156,6 +171,7 @@ Misskey 一括インポート zip・文字列コンバーター（aiscript）の
 
 | 項目                | 仕様                                                          |
 | ------------------- | ------------------------------------------------------------- |
+| 等幅 OTF            | OpenType/CFF、unitsPerEm 1000、advance 496u / 992u、hhea・typo 660/−400、win 793/198、`post.isFixedPitch=1`、PANOSE proportion=monospaced、kern なし |
 | グリフ SVG          | viewBox `0 0 512 512`、`<!-- frame x=.. y=.. -->` に等幅枠を埋め込み |
 | CJK SVG の塗り      | `fill-rule="evenodd"`（原本の周り方に依存せず穴を再現）        |
 | デカール（Misskey） | 高さ 512 / 128 px・**幅可変**（半角 ≈ 1:2、全角 ≈ 1:1）        |
@@ -171,8 +187,8 @@ Misskey 一括インポート zip・文字列コンバーター（aiscript）の
 ## ロードマップ
 
 1. **フェーズ1（完了・alpha）** — 等幅グリフ SVG と CJK 工業デカール PNG の生成環境
-2. **フェーズ2** — 等幅 OTF の生成（`src/glyphs/` の SVG と枠幅を共通ソースにする）。
-   引継ぎ資料: [docs/HANDOFF_PHASE2.md](docs/HANDOFF_PHASE2.md)
+2. **フェーズ2（完了・v0.1.0）** — 等幅 OTF の生成環境（`scripts/build_font.py`）。
+   経緯と設計判断: [docs/HANDOFF_PHASE2.md](docs/HANDOFF_PHASE2.md)
 3. 収録字の拡充（濁点・半濁点・や行・小書き・和文括弧／約物）、Misskey zip・aiscript 対応表
 
 ---
