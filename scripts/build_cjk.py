@@ -5,15 +5,17 @@
     1. latin   本家 ``extract_glyphs.extract_all`` で OTF を SVG 化 → transform/frame を
                等幅枠（半角 496u / 全角 992u）へ書き換える
     2. cjk     ``extract_ai_glyphs`` で .ai アートボードを SVG 化（同じ枠契約）
-    3. decal   本家 ``generate_decal`` の render を CJK グリフだけに適用（5 スキーム）
-    4. weekday 曜日漢字 7 字を曜日配色（docs/WEEKDAY_COLORING_PLAN.md）でデカール化
-    5. previews README 用プレビュー（docs/previews/hero.png, glyphset.png）
+    3. font    ``build_font`` で等幅 OTF（dist/fonts/）を生成し検証する
+    4. decal   本家 ``generate_decal`` の render を CJK グリフだけに適用（5 スキーム）
+    5. weekday 曜日漢字 7 字を曜日配色（docs/WEEKDAY_COLORING_PLAN.md）でデカール化
+    6. previews README 用プレビュー（docs/previews/hero.png, glyphset.png）
 
 使い方（Windows は ``py -3.14``。libcairo が無ければ ``$env:CAIRO_DLL_DIR`` で DLL の場所を渡す。
 macOS は venv の ``python`` に読み替え、Homebrew の libcairo は
 ``DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib`` で見つけさせる）:
     py -3.14 scripts/build_cjk.py
-    py -3.14 scripts/build_cjk.py --no-decal        # SVG だけ更新
+    py -3.14 scripts/build_cjk.py --no-decal        # SVG と OTF だけ更新
+    py -3.14 scripts/build_cjk.py --no-font         # OTF を作らない（skia-pathops 未導入時）
     py -3.14 scripts/build_cjk.py --font ... --ai ...
 """
 from __future__ import annotations
@@ -39,6 +41,8 @@ if os.environ.get("CAIRO_DLL_DIR"):
 import extract_glyphs as eg  # noqa: E402  本家
 import generate_decal as gd  # noqa: E402  本家
 import extract_ai_glyphs as ai  # noqa: E402
+import metrics  # noqa: E402
+import build_font  # noqa: E402
 
 FONT = ROOT / "_original-fonts" / "penchant-manufacture_v4.0-release" / "PenchantManufacture.otf"
 SRC = ROOT / "src" / "glyphs"
@@ -81,14 +85,12 @@ def monospace_latin(font_path: Path, out_dir: Path) -> list[Path]:
         pen = BoundsPen(glyph_set)
         glyph_set[info["glyph"]].draw(pen)
         ink_x0, _, ink_x1, _ = pen.bounds
-        ink_w = ink_x1 - ink_x0
-        cell = CELL_HALF if ink_w <= CELL_HALF else CELL_FULL
-        if ink_w > CELL_FULL:
-            print(f"  WARN: {info['char']} のインク幅 {ink_w:.0f}u が全角枠 {CELL_FULL}u を超過"
+        if ink_x1 - ink_x0 > CELL_FULL:
+            print(f"  WARN: {info['char']} のインク幅 {ink_x1 - ink_x0:.0f}u が全角枠 {CELL_FULL}u を超過"
                   "（フォント側で調整後に再ビルド）")
-        # 枠内オフセット（u）: advance が枠に収まれば advance 中央、超えればインク中央
-        gx = (cell - adv) / 2 if adv <= cell else (cell - ink_w) / 2 - ink_x0
-        tx_cell = (ai.VIEWBOX - cell * scale) / 2
+        # 枠幅と枠内オフセット（u）は OTF 生成（build_font）と共通の規則（metrics.latin_cell）
+        cell, gx = metrics.latin_cell(adv, ink_x0, ink_x1)
+        tx_cell = metrics.cell_left_px(cell)
         text = svg_path.read_text(encoding="utf-8")
         text = _TX_RE.sub(lambda m: f"{m.group(1)}{tx_cell + gx * scale:.3f}{m.group(3)}", text, count=1)
         text = _FRAME_RE.sub(
@@ -111,10 +113,10 @@ def decal(sources: list[Path], schemes: dict[str, gd.Scheme]) -> int:
     return count
 
 
-def build(font_path: Path, ai_path: Path, with_decal: bool) -> None:
-    print("== 1/5 latin: OTF → 等幅 SVG")
+def build(font_path: Path, ai_path: Path, with_decal: bool, with_font: bool = True) -> None:
+    print("== 1/6 latin: OTF → 等幅 SVG")
     latin = monospace_latin(font_path, SRC)
-    print("\n== 2/5 cjk: .ai → 等幅 SVG")
+    print("\n== 2/6 cjk: .ai → 等幅 SVG")
     cjk = ai.extract_all(ai_path, SRC)
     keep = {p.stem for p in latin + cjk}
     for stale in SRC.glob("char_*.svg"):
@@ -122,12 +124,16 @@ def build(font_path: Path, ai_path: Path, with_decal: bool) -> None:
             stale.unlink()
             print(f"  旧 SVG を削除: {stale.name}")
     _selfcheck(cjk)
+    if with_font:
+        print("\n== 3/6 font: 等幅 OTF（本家 CFF 複製 ＋ CJK SVG → skia-pathops）")
+        otf = build_font.build(font_path, SRC, build_font.OUT_DIR)
+        build_font.check(otf, font_path, SRC)
     if not with_decal:
         return
 
-    print("\n== 3/5 decal: CJK グリフ × 5 スキーム")
+    print("\n== 4/6 decal: CJK グリフ × 5 スキーム")
     n = decal(cjk, gd.SCHEMES)
-    print("\n== 4/5 weekday: 曜日配色")
+    print("\n== 5/6 weekday: 曜日配色")
     by_char = {chr(int(p.stem[8:12], 16)): p for p in cjk}   # char_uniXXXX_XXXX
     for char, (fill, edge) in WEEKDAY.items():
         if char not in by_char:
@@ -136,7 +142,7 @@ def build(font_path: Path, ai_path: Path, with_decal: bool) -> None:
         scheme = gd.Scheme(f"曜日 {char}", "mono", _rgb(fill), _rgb(fill), _rgb(edge), _rgb(edge),
                            _rgb(edge), grain=0.0)
         n += decal([by_char[char]], {"weekday": scheme})
-    print("\n== 5/5 previews: README 用プレビュー")
+    print("\n== 6/6 previews: README 用プレビュー")
     import build_previews_cjk  # noqa: E402  dist が揃ってから import
     build_previews_cjk.build()
     print(f"\n完了: 欧文 {len(latin)} 字 / CJK {len(cjk)} 字 / decal {n} 点")
@@ -155,10 +161,11 @@ def _selfcheck(cjk: list[Path]) -> None:
 @click.command()
 @click.option("--font", "font_path", default=str(FONT), show_default=True, help="欧文 OTF")
 @click.option("--ai", "ai_path", default=str(ai.AI_PATH), show_default=True, help="CJK .ai 原本")
-@click.option("--no-decal", is_flag=True, help="SVG のみ更新（PNG を生成しない）")
-def main(font_path: str, ai_path: str, no_decal: bool) -> None:
-    """欧文 OTF と Illustrator 原本から等幅グリフ SVG と CJK デカール PNG を生成します。"""
-    build(Path(font_path), Path(ai_path), with_decal=not no_decal)
+@click.option("--no-decal", is_flag=True, help="SVG と OTF のみ更新（PNG を生成しない）")
+@click.option("--no-font", is_flag=True, help="等幅 OTF を生成しない")
+def main(font_path: str, ai_path: str, no_decal: bool, no_font: bool) -> None:
+    """欧文 OTF と Illustrator 原本から等幅グリフ SVG・等幅 OTF・CJK デカール PNG を生成します。"""
+    build(Path(font_path), Path(ai_path), with_decal=not no_decal, with_font=not no_font)
 
 
 if __name__ == "__main__":

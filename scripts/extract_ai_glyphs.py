@@ -37,13 +37,10 @@ AI_PATH = ROOT / "_original-fonts" / ".develop" / "f-skt penchant-manufactuer-cj
 OUT_DIR = ROOT / "src" / "glyphs"
 ARTBOARD = 1                # 0 始まり。アートボード2 = CJK
 
-# ── メトリクス契約（AGENTS.md「等幅メトリクス」が正） ──
-UPM = 1000
-VIEWBOX = 512
-WIN_TOP, WIN_BOTTOM = 793, -198   # 本家 OS/2 win 帯（不変）
-CAP_HEIGHT = 661                  # 行上端が来るフォント座標（大文字上端）
-UNITS_PER_MM = CAP_HEIGHT / 10.0  # 欧文 .ai の大文字高 10mm = 661u
-CELL_HALF, CELL_FULL = 496, 992   # 半角 / 全角 枠幅（u）
+# ── メトリクス契約（AGENTS.md「等幅メトリクス」が正。値は scripts/metrics.py に置く） ──
+from metrics import (  # noqa: E402
+    CAP_HEIGHT, CELL_FULL, CELL_HALF, UNITS_PER_MM, UPM, VIEWBOX, WIN_BOTTOM, WIN_TOP,
+)
 
 PT_TO_MM = 25.4 / 72
 SLACK_MM = 1.5   # 格子線を左上へずらす量。手置きのズレ（い は -0.5mm、月 は -0.5mm）を吸収しつつ、

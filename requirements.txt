@@ -5,6 +5,9 @@
 # .ai（PDF 互換）のパス抽出（extract_ai_glyphs.py）
 pymupdf>=1.24
 
+# 等幅 OTF 生成（build_font.py）: evenodd → nonzero の向き正規化。abi3 wheel（Win / macOS）あり
+skia-pathops>=0.8
+
 # 旧経路: f3d → DXF（extract_dice_dxf.py、代替・温存）
 ezdxf>=1.1
 matplotlib>=3.7
